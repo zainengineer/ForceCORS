@@ -105,6 +105,21 @@ function onHeadersReceivedHandler(info) {
 
 }
 
+function onBeforeSendHeaders(info) {
+    let desiredHeaders = [
+        {
+            name: 'User-Agent',
+            value: 'Custom agent sender'
+        },
+        {
+            name: 'Referer',
+            value: info.url},
+    ];
+    let headersToSend = mergeNewHeaders(info.requestHeaders, desiredHeaders);
+    return {requestHeaders: headersToSend};
+    // return {requestHeaders: info.requestHeaders};
+}
+
 /**
  * Opens the Options page in a new tab
  */
@@ -161,6 +176,20 @@ function init() {
         ["blocking", "responseHeaders"]
     );
 
+
+    if (chrome.webRequest.onBeforeSendHeaders.hasListener(onBeforeSendHeaders)) {
+        chrome.webRequest.onBeforeSendHeaders.removeListener(onBeforeSendHeaders)
+    }
+
+    chrome.webRequest.onBeforeSendHeaders.addListener(
+        onBeforeSendHeaders,
+        // filters
+        {
+            urls:["https://*.atlassian.net/rest/*"]
+        },
+        // extraInfoSpec
+        ["blocking","requestHeaders"]
+    );
     chrome.webRequest.onErrorOccurred.addListener(
         function(info){console.log('ForceCORS was unable to modify headers for: '+info.url +' - '+info.error)},
         {
